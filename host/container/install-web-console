@@ -1,0 +1,16 @@
+#!/bin/bash
+set -e
+
+# See: https://github.com/openshift/origin-web-console-server#installing-the-console
+
+cd container
+
+if [ ! -d origin ]; then
+	git clone --depth 1 https://github.com/openshift/origin
+fi
+
+cd origin/install/origin-web-console
+oc login -u system:admin
+oc create namespace openshift-web-console
+oc process -f rbac-template.yaml | oc auth reconcile -f -
+oc process -f console-template.yaml -p "API_SERVER_CONFIG=$(cat install/console-config.yaml)" | oc apply -n openshift-web-console -f -

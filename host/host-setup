@@ -1,0 +1,20 @@
+#!/bin/bash
+
+# Do we really need to update the OS?
+#dnf update -y
+
+dnf install -y docker byobu
+
+# Byobu makes ssh easier
+sudo -u vagrant byobu-enable
+
+# Docker
+systemctl enable docker
+systemctl start docker
+
+# Disable the firewall so we can access OpenShift from outside the VM
+systemctl disable firewalld
+systemctl stop firewalld
+
+# Bootstrap OpenShift
+host/bootstrap-openshift

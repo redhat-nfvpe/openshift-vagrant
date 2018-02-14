@@ -1,0 +1,25 @@
+#!/bin/bash
+set -e
+
+# See: https://docs.openshift.org/latest/install_config/imagestreams_templates.html
+
+# Translate the version from something like "v3.7.1+ab0f056" to "3.7"
+OPENSHIFT_VERSION=$(openshift version | grep 'openshift\b' | awk '{split($2,v,"+"); split(substr(v[1],2),v,"."); print v[1] "." v[2]}')
+
+cd container
+
+if [ ! -d openshift-ansible ]; then
+	git clone --depth 1 https://github.com/openshift/openshift-ansible
+fi
+
+cd "openshift-ansible/roles/openshift_examples/files/examples/v$OPENSHIFT_VERSION"
+
+# Streams
+oc create -f image-streams/image-streams-centos7.json -n openshift
+#oc create -f xpaas-streams -n openshift
+
+# Templates
+oc create -f quickstart-templates -n openshift
+oc create -f db-templates -n openshift
+#oc create -f cfme-templates -n openshift
+#oc create -f xpaas-templates -n openshift
