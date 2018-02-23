@@ -42,7 +42,7 @@ What happens behind the scenes when you run `vagrant up` is this:
    create a virtual machine based on it. Our `host` directory here will be shared with it. Note that
    the machine will have a "public" IP address, on the same network as your host. (If you have
    multiple network interfaces on your machine then Vagrant will ask you which one to use.)
-2. Within the virtual machine we will run `host/host-setup`, which will install Docker (from the
+2. Within the virtual machine we will run `host/setup-host`, which will install Docker (from the
    default Fedora repositories).
 3. Within the virtual machine we will then then run `host/bootstrap-openshift`, which will download
    the OpenShift Origin all-in-one Docker image, explicitly *without* Ansible (from

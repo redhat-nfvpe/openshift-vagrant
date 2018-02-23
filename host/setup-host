@@ -1,11 +1,14 @@
 #!/bin/bash
+set -e
 
-# Do we really need to update the OS?
+HERE=$(dirname "$(readlink -f "$0")")
+
+# Do we really need to update all packages? Takes forever...
 #dnf update -y
 
 dnf install -y docker byobu
 
-# Byobu makes ssh easier
+# Byobu makes ssh-ing easier
 sudo -u vagrant byobu-enable
 
 # Docker
@@ -13,8 +16,9 @@ systemctl enable docker
 systemctl start docker
 
 # Disable the firewall so we can access OpenShift from outside the VM
+# TODO: just open port we want (8443 for OpenShift and other application ports)
 systemctl disable firewalld
 systemctl stop firewalld
 
 # Bootstrap OpenShift
-host/bootstrap-openshift
+"$HERE/bootstrap-openshift"

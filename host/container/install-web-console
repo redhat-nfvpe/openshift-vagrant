@@ -1,16 +1,26 @@
 #!/bin/bash
 set -e
 
+# To get the latest version of the templates, delete the "web-console" directory
+
 # See: https://github.com/openshift/origin-web-console-server#installing-the-console
 
-cd container
+HERE=$(dirname "$(readlink -f "$0")")
+WEB_CONSOLE="$HERE/web-console"
 
-if [ ! -d origin ]; then
-	git clone --depth 1 https://github.com/openshift/origin
+# Vagrant's public network is on eth1 (see: https://askubuntu.com/a/560466)
+PUBLIC_IP=$(ip addr show eth1 | grep 'inet\b' | awk '{print $2}' | cut -d/ -f1)
+
+if [ ! -d "$WEB_CONSOLE" ]; then
+	if [ ! -d /tmp/origin ]; then 
+		git clone --depth 1 https://github.com/openshift/origin /tmp/origin
+	fi
+	cp --recursive /tmp/origin/install/origin-web-console "$WEB_CONSOLE"
+	rm --recursive --force /tmp/origin
 fi
 
-cd origin/install/origin-web-console
-oc login -u system:admin
+CONSOLE_CONFIG=$(cat "$HERE/web-console/console-config.yaml" | sed "s/127.0.0.1/$PUBLIC_IP/g")
+
+oc login --username=system:admin
 oc create namespace openshift-web-console
-oc process -f rbac-template.yaml | oc auth reconcile -f -
-oc process -f console-template.yaml -p "API_SERVER_CONFIG=$(cat install/console-config.yaml)" | oc apply -n openshift-web-console -f -
+oc process --filename="$WEB_CONSOLE/console-template.yaml" --param="API_SERVER_CONFIG=$CONSOLE_CONFIG" | oc apply --namespace=openshift-web-console --filename=-

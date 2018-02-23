@@ -1,13 +1,13 @@
 #!/bin/bash
+set -e
 
 # See: https://docs.openshift.org/latest/getting_started/administrators.html#running-in-a-docker-container
 
 # Available versions: https://hub.docker.com/r/openshift/origin/tags/
-OPENSHIFT_VERSION=3.7.1
-#OPENSHIFT_VERSION=3.9.0
+OPENSHIFT_VERSION=3.9.0
+#OPENSHIFT_VERSION=3.7.1
 
-# Vagrant's public network is on eth1
-# See: # https://askubuntu.com/a/560466
+# Vagrant's public network is on eth1 (see: https://askubuntu.com/a/560466)
 PUBLIC_IP=$(ip addr show eth1 | grep 'inet\b' | awk '{print $2}' | cut -d/ -f1)
 MASTER="https://$PUBLIC_IP:8443"
 
@@ -29,6 +29,11 @@ sudo docker run \
 
 echo "Waiting for OpenShift to start..."
 sleep 10
+
+if [ "$OPENSHIFT_VERSION" != '3.7.1' ]; then
+	# Before 3.9 the web console was included in the Docker image
+	sudo docker exec origin /var/lib/origin/container/install-web-console
+fi
 
 sudo docker exec origin /var/lib/origin/container/install-templates
 
