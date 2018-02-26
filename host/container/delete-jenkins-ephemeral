@@ -1,0 +1,7 @@
+#!/bin/bash
+set -e
+
+PROJECT=my-jenkins
+
+oc login --username=admin --password=admin
+oc delete project "$PROJECT"

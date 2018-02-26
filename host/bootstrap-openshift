@@ -7,12 +7,22 @@ set -e
 OPENSHIFT_VERSION=3.9.0
 #OPENSHIFT_VERSION=3.7.1
 
+DOCKER_NAME=openshift-origin
+DOCKER_IMAGE="openshift/origin:v$OPENSHIFT_VERSION"
+HTTP=10080
+HTTPS=10443
+
+HOST_HOME=/home/vagrant
+CONTAINER_HOME=/var/lib/origin
+
 # Vagrant's public network is on eth1 (see: https://askubuntu.com/a/560466)
 PUBLIC_IP=$(ip addr show eth1 | grep 'inet\b' | awk '{print $2}' | cut -d/ -f1)
 MASTER="https://$PUBLIC_IP:8443"
+HTTP="http://$PUBLIC_IP:$HTTP/"
+HTTPS="https://$PUBLIC_IP:$HTTPS/"
 
 sudo docker run \
-	--name=origin \
+	--name="$DOCKER_NAME" \
 	--privileged \
 	--restart=always \
 	--detach \
@@ -23,20 +33,32 @@ sudo docker run \
 	--volume=/sys:/sys \
 	--volume=/sys/fs/cgroup:/sys/fs/cgroup:rw \
 	--volume=/var/lib/docker:/var/lib/docker:rw \
-	--volume=/var/lib/origin/openshift.local.volumes:/var/lib/origin/openshift.local.volumes:rslave \
-	--volume=/home/vagrant/host/container:/var/lib/origin/container \
-	"openshift/origin:v$OPENSHIFT_VERSION" start --master="$MASTER"
+	--volume="$CONTAINER_HOME/openshift.local.volumes:$CONTAINER_HOME/openshift.local.volumes:rslave" \
+	--volume="$HOST_HOME/host/container:$CONTAINER_HOME/container" \
+	"$DOCKER_IMAGE" start --master="$MASTER"
 
 echo "Waiting for OpenShift to start..."
-sleep 10
+sleep 15
+
+sudo docker exec "$DOCKER_NAME" "$CONTAINER_HOME/container/install-templates"
+sudo docker exec "$DOCKER_NAME" "$CONTAINER_HOME/container/install-router"
 
 if [ "$OPENSHIFT_VERSION" != '3.7.1' ]; then
 	# Before 3.9 the web console was included in the Docker image
-	sudo docker exec origin /var/lib/origin/container/install-web-console
+	sudo docker exec "$DOCKER_NAME" "$CONTAINER_HOME/container/install-web-console"
 fi
 
-sudo docker exec origin /var/lib/origin/container/install-templates
-
-echo "Access OpenShift web console at: $MASTER/console/"
-echo "Note that you will have to add a security exception for the cert in your web browser"
-echo "Default username: admin, password: admin"
+echo
+echo "Access your OpenShift web console at:"
+echo "  $MASTER/console/"
+echo
+echo "To login from a OpenShift client:"
+echo "  oc login $MASTER"
+echo
+echo "(default username: admin, password: admin)"
+echo
+echo "Your deployed web applications will be routed to:"
+echo "  $HTTP"
+echo "  $HTTPS"
+echo
+echo "(Note that for https you will have to add a security exception for the certificate in your web browser)"

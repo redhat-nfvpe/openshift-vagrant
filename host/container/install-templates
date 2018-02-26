@@ -17,15 +17,17 @@ if [ ! -d "$TEMPLATES" ]; then
 	fi
 	cp --recursive "/tmp/openshift-ansible/roles/openshift_examples/files/examples/v$OPENSHIFT_VERSION" "$TEMPLATES"
 	rm --recursive --force /tmp/openshift-ansible
-
 fi
 
+oc login --username=system:admin
+oc project openshift
+
 # Streams
-oc create --filename="$TEMPLATES/image-streams/image-streams-centos7.json" --namespace=openshift
-#oc create --filename="$TEMPLATES/xpaas-streams" --namespace=openshift
+oc create --filename="$TEMPLATES/image-streams/image-streams-centos7.json"
+#oc create --filename="$TEMPLATES/xpaas-streams"
 
 # Templates
-oc create --filename="$TEMPLATES/quickstart-templates" --namespace=openshift
-oc create --filename="$TEMPLATES/db-templates" --namespace=openshift
-#oc create --filename="$TEMPLATES/cfme-templates" --namespace=openshift
-#oc create --filename="$TEMPLATES/xpaas-templates" --namespace=openshift
+oc create --filename="$TEMPLATES/quickstart-templates"
+oc create --filename="$TEMPLATES/db-templates"
+#oc create --filename="$TEMPLATES/cfme-templates"
+#oc create --filename="$TEMPLATES/xpaas-templates"

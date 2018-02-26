@@ -1,0 +1,11 @@
+#!/bin/bash
+
+SERVICE_ACCOUNT=router
+PROJECT=default
+NAME=default-router
+
+oc login --username=system:admin
+oc project "$PROJECT"
+oc delete all --selector="router=$NAME" # label was automatically created by "oc adm router"
+oc delete clusterrolebindings "router-$NAME-role" # unlabeled (a bug?)
+oc delete serviceaccount "$SERVICE_ACCOUNT"

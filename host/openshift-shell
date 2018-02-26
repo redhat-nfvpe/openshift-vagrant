@@ -1,4 +1,6 @@
 #!/bin/bash
 set -e
 
-sudo docker exec --interactive --tty origin bash
+DOCKER_NAME=openshift-origin
+
+sudo docker exec --interactive --tty "$DOCKER_NAME" bash

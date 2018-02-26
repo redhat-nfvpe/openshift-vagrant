@@ -1,0 +1,20 @@
+#!/bin/bash
+set -e
+
+# See: https://docs.openshift.org/latest/using_images/other_images/jenkins.html
+#      https://github.com/openshift/origin/blob/master/examples/jenkins/README.md
+
+# TODO: Couldn't get OpenShift OAuth to work. :(
+# For now, use Jenkins authentication -- user: admin, password: password
+
+PROJECT=my-jenkins
+
+# Vagrant's public network is on eth1 (see: https://askubuntu.com/a/560466)
+PUBLIC_IP=$(ip addr show eth1 | grep 'inet\b' | awk '{print $2}' | cut -d/ -f1)
+
+oc login --username=admin --password=admin
+oc new-project "$PROJECT"
+oc new-app --template=jenkins-ephemeral --param=ENABLE_OAUTH=false
+
+# The default route uses a custom hostname, but we want access via our public IP
+oc expose service jenkins --name=jenkins-public --hostname="$PUBLIC_IP"

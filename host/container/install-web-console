@@ -8,9 +8,6 @@ set -e
 HERE=$(dirname "$(readlink -f "$0")")
 WEB_CONSOLE="$HERE/web-console"
 
-# Vagrant's public network is on eth1 (see: https://askubuntu.com/a/560466)
-PUBLIC_IP=$(ip addr show eth1 | grep 'inet\b' | awk '{print $2}' | cut -d/ -f1)
-
 if [ ! -d "$WEB_CONSOLE" ]; then
 	if [ ! -d /tmp/origin ]; then 
 		git clone --depth 1 https://github.com/openshift/origin /tmp/origin
@@ -19,8 +16,19 @@ if [ ! -d "$WEB_CONSOLE" ]; then
 	rm --recursive --force /tmp/origin
 fi
 
-CONSOLE_CONFIG=$(cat "$HERE/web-console/console-config.yaml" | sed "s/127.0.0.1/$PUBLIC_IP/g")
+# Notes:
+#
+# 1) The web console *must* be installed in the "openshift-web-console" namespace 
+# 2) We can't use "new-project" for names that begin with "openshift-", because they are reserved,
+#    so we use "create namespace" instead
+
+# Vagrant's public network is on eth1 (see: https://askubuntu.com/a/560466)
+PUBLIC_IP=$(ip addr show eth1 | grep 'inet\b' | awk '{print $2}' | cut -d/ -f1)
+
+CONFIG=$(cat "$WEB_CONSOLE/console-config.yaml" | sed "s/127.0.0.1/$PUBLIC_IP/g")
 
 oc login --username=system:admin
 oc create namespace openshift-web-console
-oc process --filename="$WEB_CONSOLE/console-template.yaml" --param="API_SERVER_CONFIG=$CONSOLE_CONFIG" | oc apply --namespace=openshift-web-console --filename=-
+oc project openshift-web-console
+oc process --filename="$WEB_CONSOLE/console-template.yaml" --param="API_SERVER_CONFIG=$CONFIG" \
+| oc apply --filename=-

@@ -1,0 +1,22 @@
+#!/bin/bash
+set -e
+
+# See: https://docs.openshift.org/latest/install_config/router/index.html
+#      https://docs.openshift.org/latest/install_config/router/default_haproxy_router.html
+
+SERVICE_ACCOUNT=router
+PROJECT=default
+NAME=default-router
+HTTP=10080
+HTTPS=10443
+
+# Note: The "oc adm router" command doesn't let us set environment vars, so we must work in three
+# stages: 1) create the router with 0 replicas, 2) set the environment vars on the deploymentconfig,
+# and then 3) scale our replicas to 1.
+
+oc login --username=system:admin
+oc project "$PROJECT"
+oc adm policy add-scc-to-user hostnetwork "system:serviceaccount:$PROJECT:$SERVICE_ACCOUNT"
+oc adm router "$NAME" --ports="$HTTP:$HTTP,$HTTPS:$HTTPS" --service-account="$SERVICE_ACCOUNT" --replicas=0
+oc set env deploymentconfig "$NAME" ROUTER_SERVICE_HTTP_PORT="$HTTP" ROUTER_SERVICE_HTTPS_PORT="$HTTPS"
+oc scale deploymentconfig "$NAME" --replicas=1
